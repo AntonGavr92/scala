@@ -34,32 +34,31 @@ class Hangman(io: IODevice) {
   val EmptyStatus = ""
 
   def play(word: String): Unit = {
-    play(word, new GameState(Set[Char](), word.toCharArray.toSet, stages.iterator, EmptyStatus))
+    val startState = new GameState(Set[Char](), word.toCharArray.toSet, stages.iterator, EmptyStatus)
+    Stream.iterate(startState)(state => play(word, state))
+      .takeWhile(state => !state.gameIsOver && !state.gameIsLost).force
   }
 
-  def play(word: String, state: GameState): Unit = {
+  def play(word: String, state: GameState): GameState = {
     io.printLine("Word: " + guessedWord(word, state.guessedLetters))
     io.printLine("Guess a letter:")
     val newState = guess(state)
     io.printLine(newState.status)
-    if (newState.status == stages.last) {
+    if (state.gameIsLost()) {
       io.printLine("You are dead")
     } else if (newState.gameIsOver()) {
       io.printLine("Congratulation! You win!")
-    } else {
-      play(word, newState)
     }
-
+    newState
   }
 
   def guess(state: GameState): GameState = {
     try {
       state.guess(letterFrom(io.readLine()))
     } catch {
-      case e: IllegalArgumentException => {
+      case e: IllegalArgumentException =>
         io.printLine(e.getMessage)
         guess(state)
-      }
     }
   }
 
@@ -93,6 +92,8 @@ class Hangman(io: IODevice) {
     }
 
     def gameIsOver(): Boolean = notGuessedLetters.isEmpty
+
+    def gameIsLost(): Boolean = !wrongLetterAnswers.hasNext
 
   }
 
