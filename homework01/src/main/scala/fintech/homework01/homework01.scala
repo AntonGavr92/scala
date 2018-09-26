@@ -30,52 +30,70 @@ package fintech.homework01
 
 class Hangman(io: IODevice) {
 
-  val NOT_GUESSED_SYMBOL = "_"
+  val NotGuessedSymbol = "_"
+  val EmptyStatus = ""
 
   def play(word: String): Unit = {
-    var guessedLetters = word.map(_ => NOT_GUESSED_SYMBOL).mkString
-    val wrongLetterAnswers = stages.iterator
-
-    while(guessedLetters.contains(NOT_GUESSED_SYMBOL) && wrongLetterAnswers.hasNext) {
-      io.printLine("Word: " + guessedLetters)
-      io.printLine("Guess a letter:")
-      try {
-        val updatedGuessedLetters = updateGuessedLetters(letterFrom(io.readLine()), guessedLetters, word)
-        if (guessedLetters == updatedGuessedLetters) {
-          io.printLine(wrongLetterAnswers.next())
-        } else {
-          guessedLetters = updatedGuessedLetters
-        }
-      } catch {
-        case e: IllegalArgumentException => io.printLine(e.getMessage)
-      }
-    }
-    printResultGame(guessedLetters)
+    play(word, new GameState(Set[Char](), word.toCharArray.toSet, stages.iterator, EmptyStatus))
   }
 
-  def updateGuessedLetters(letter: Char, guessedLetters: String, word : String) : String = {
-    word.map(x =>
-      if (x == letter || guessedLetters.contains(x))
-        x
+  def play(word: String, state: GameState): Unit = {
+    io.printLine("Word: " + guessedWord(word, state.guessedLetters))
+    io.printLine("Guess a letter:")
+    val newState = guess(state)
+    io.printLine(newState.status)
+    if (newState.status == stages.last) {
+      io.printLine("You are dead")
+    } else if (newState.gameIsOver()) {
+      io.printLine("Congratulation! You win!")
+    } else {
+      play(word, newState)
+    }
+
+  }
+
+  def guess(state: GameState): GameState = {
+    try {
+      state.guess(letterFrom(io.readLine()))
+    } catch {
+      case e: IllegalArgumentException => {
+        io.printLine(e.getMessage)
+        guess(state)
+      }
+    }
+  }
+
+  def letterFrom(input: String): Char = {
+    if (input.length != 1) {
+      throw new IllegalArgumentException("Write only one letter")
+    } else {
+      input.head
+    }
+  }
+
+  def guessedWord(word: String, guessedLetters: Set[Char]): String = {
+    word.map(letter =>
+      if (guessedLetters.contains(letter))
+        letter
       else
-        NOT_GUESSED_SYMBOL
+        NotGuessedSymbol
     ).mkString
   }
 
-  def printResultGame(guessedLetters: String): Unit = {
-    if(guessedLetters.contains(NOT_GUESSED_SYMBOL)) {
-      io.printLine("You lose :(")
-    } else {
-      io.printLine("Congratulation! You win!")
-    }
-  }
+  class GameState(val guessedLetters: Set[Char], val notGuessedLetters: Set[Char], val wrongLetterAnswers: Iterator[String], val status: String) {
 
-  def letterFrom(input : String) : Char = {
-    if(input.length != 1) {
-      throw new IllegalArgumentException("Write only one letter")
-    } else {
-      input(0)
+    def guess(letter: Char): GameState = {
+      if (guessedLetters.contains(letter)) {
+        throw new IllegalArgumentException("You used this letter, try another")
+      } else if (notGuessedLetters.contains(letter)) {
+        new GameState(guessedLetters + letter, notGuessedLetters - letter, wrongLetterAnswers, status)
+      } else {
+        new GameState(guessedLetters, notGuessedLetters, wrongLetterAnswers, wrongLetterAnswers.next())
+      }
     }
+
+    def gameIsOver(): Boolean = notGuessedLetters.isEmpty
+
   }
 
   val stages = List(
@@ -140,5 +158,6 @@ class Hangman(io: IODevice) {
 
 trait IODevice {
   def printLine(text: String): Unit
+
   def readLine(): String
 }
