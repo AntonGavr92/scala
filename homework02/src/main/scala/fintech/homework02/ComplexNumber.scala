@@ -18,8 +18,19 @@ class ComplexNumber (val real: Double, val imaginary: Double){
   }
 
   def ~ (value: Int): ComplexNumber = {
-    Stream.iterate(this)(number => number * this).apply(value - 1)
+    val abs = Math.sqrt(real * real + imaginary * imaginary)
+    val arg = if (real > 0)
+      Math.atan2(imaginary, real)
+    else if (imaginary > 0)
+      Math.atan2(imaginary, real) + Math.PI
+    else
+      Math.atan2(imaginary, real) - Math.PI
+    new ComplexNumber(
+      Math.pow(abs, value) * Math.cos(value * arg),
+      Math.pow(abs, value) * Math.sin(value * arg)
+    )
   }
+
 
   def canEqual(other: Any): Boolean = other.isInstanceOf[ComplexNumber]
 

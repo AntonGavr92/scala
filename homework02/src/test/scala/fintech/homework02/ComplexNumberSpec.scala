@@ -26,8 +26,22 @@ class ComplexNumberSpec extends FlatSpec with Matchers {
     first toString() shouldBe "3.0 + 3.0i"
   }
 
-  "Degree of complex number" should "be correct" in {
-    second ~ 3 shouldBe new ComplexNumber(-16, 16)
+  "Positive pow of complex number" should "be correct" in {
+    (second ~ 3 real) should be < -16.0
+    (second ~ 3 real) should be >= -16.1
+    (second ~ 3 imaginary) should be <= 16.1
+    (second ~ 3 imaginary) should be > 16.0
   }
 
+  "Negative pow of complex number" should "be correct" in {
+    (second ~ -3 real) should be <= -0.031
+    (second ~ -3 real) should be > -0.032
+    (second ~ -3 imaginary) should be <= -0.031
+    (second ~ -3 imaginary) should be > -0.032
+  }
+
+  "Pow 0 of complex number" should "be correct" in {
+    (second ~ 0 real) shouldBe 1
+    (second ~ 0 imaginary) shouldBe 0
+  }
 }
