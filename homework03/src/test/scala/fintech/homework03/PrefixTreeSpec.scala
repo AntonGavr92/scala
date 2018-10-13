@@ -11,6 +11,12 @@ class PrefixTreeSpec extends FlatSpec with Matchers {
     val withDouble: PrefixTree[Char, AnyVal] = with42.put("abcde", 13.0)
     withDouble.sub("ab").sub("cd").get should be (42)
     withDouble.sub("ab").sub("cde").get should be (13.0)
+
+    val branched = tree
+      .put("abc", 1)
+      .put("abd", 2)
+
+    branched.sub("abc").get should be (1)
   }
 
   it should "work well with int" in {
@@ -27,6 +33,8 @@ class PrefixTreeSpec extends FlatSpec with Matchers {
     }
     Option(with42.sub("ab").sub("cd").get) should be (Option(42))
   }
+
+
 
 
 }

@@ -16,13 +16,12 @@ trait PrefixTree[K, +V] {
 class PrefixTreeImpl[K, +V](val value: Option[V], val prefixTree: Map[K, PrefixTree[K, V]]) extends PrefixTree[K, V]{
 
   override def put[U >: V](path: Seq[K], value: U): PrefixTree[K, U] = {
-    if (path.nonEmpty && prefixTree.contains(path.head)) {
-      new PrefixTreeImpl[K, U](Option.empty,  Map(path.head -> prefixTree(path.head).put(path.drop(1), value)))
-    } else if(path.nonEmpty) {
-      new PrefixTreeImpl[K, U](this.value,  Map(path.head -> put(path.drop(1), value)))
-    } else {
+    if (path.isEmpty)
       new PrefixTreeImpl[K, U](Option(value), Map())
-    }
+    else if (prefixTree.contains(path.head))
+      new PrefixTreeImpl[K, U](Option.empty,  Map(path.head -> prefixTree(path.head).put(path.drop(1), value)))
+    else
+      new PrefixTreeImpl[K, U](this.value,  prefixTree + (path.head -> put(path.drop(1), value)))
   }
 
   override def sub(path: Seq[K]): PrefixTree[K, V] = {
