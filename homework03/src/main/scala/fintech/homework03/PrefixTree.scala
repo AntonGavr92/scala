@@ -1,5 +1,7 @@
 package fintech.homework03
 
+import scala.annotation.tailrec
+
 
 // Реализовать интерфейс PrefixTree
 // Интерфейс позволяет складывать объекты произвольного класса V по заданному "пути" Seq[K] в дерево
@@ -19,7 +21,7 @@ class PrefixTreeImpl[K, +V](val value: Option[V], val prefixTree: Map[K, PrefixT
     if (path.isEmpty)
       new PrefixTreeImpl[K, U](Option(value), Map())
     else if (prefixTree.contains(path.head))
-      new PrefixTreeImpl[K, U](Option.empty,  Map(path.head -> prefixTree(path.head).put(path.drop(1), value)))
+      new PrefixTreeImpl[K, U](this.value,  prefixTree + (path.head -> prefixTree(path.head).put(path.drop(1), value)))
     else
       new PrefixTreeImpl[K, U](this.value,  prefixTree + (path.head -> put(path.drop(1), value)))
   }
