@@ -1,5 +1,8 @@
 package fintech.homework04
 
+import scala.annotation.tailrec
+import scala.collection.immutable.Queue
+
 sealed trait Tree[+A]
 
 case class Leaf[A](value: A) extends Tree[A]
