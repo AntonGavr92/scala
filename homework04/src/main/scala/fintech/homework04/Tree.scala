@@ -46,7 +46,7 @@ object Tree {
   }
 
   def depth[A](t: Tree[A]): Int = {
-    size(t) / MaxCountLeafInBranch + 1
+    fold(t)(_ => 1)((x, y) => x + y) - 1
   }
 
   //здесь возможно придется прибегнуть к насильному указанию типа: Leaf(a): Tree[A]
