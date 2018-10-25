@@ -41,19 +41,9 @@ case class Tweet(id: String,
   }
 }
 
-sealed trait Result[T] {
-  def getValue: T
-}
-case class Success[T](value: T) extends Result[T] {
-  override def getValue: T = {
-    value
-  }
-}
-case class Error[T](message: String) extends Result[T] {
-  override def getValue: T = {
-    throw new UnsupportedOperationException()
-  }
-}
+sealed trait Result[+T]
+case class Success[T](value: T) extends Result[T]
+case class Error[T](message: String) extends Result[T]
 
 
 case class CreateTweetRequest(text: String, user: String)
@@ -61,17 +51,17 @@ case class GetTweetRequest(id: String)
 case class LikeRequest(id: String)
 
 trait TweetStorage {
-  def save(tweet: Tweet): Option[Tweet]
+  def save(tweet: Tweet): Tweet
 
   def get(id: String): Option[Tweet]
 }
 
 object InMemoryTweetStorage extends TweetStorage {
-  val storage: mutable.Map[String, Tweet] = mutable.Map()
+  private val storage: mutable.Map[String, Tweet] = mutable.Map()
 
-  override def save(tweet: Tweet): Option[Tweet] = {
-      storage.put(tweet.id, tweet)
-      storage.get(tweet.id)
+  override def save(tweet: Tweet): Tweet = {
+    storage.put(tweet.id, tweet)
+    tweet
   }
 
   override def get(id: String): Option[Tweet] = storage.get(id)
@@ -89,26 +79,23 @@ class TwitterApi(storage: TweetStorage) {
         hashTagsFrom(request.text),
         Option(Instant.now()),
         0)
-      storage.save(tweet)
-      Success[Tweet](tweet)
+      Success(storage.save(tweet))
     }
     else
-      Error[Tweet]("Request is not valid!")
+      Error("Request is not valid!")
   }
 
   def getTweet(request: GetTweetRequest): Result[Tweet] = {
     storage.get(request.id)
-      .map(tweet => Success[Tweet](tweet))
-      .getOrElse(Error[Tweet]("Tweet not found!"))
+      .map(tweet => Success(tweet))
+      .getOrElse(Error("Tweet not found!"))
   }
 
   def addLike(request: LikeRequest): Result[Int] = {
     storage.get(request.id)
-      .map(tweet => storage.save(new Tweet(tweet, tweet.likes + 1)))
-      .map(option =>
-        option.map(tw => Success[Int](tw.likes)).getOrElse(Error[Int]("Adding like error!"))
-      )
-      .getOrElse(Error[Int]("Tweet not found!"))
+      .map(tweet => storage.save(tweet.copy(likes = tweet.likes + 1)))
+      .map(tw => Success(tw.likes))
+      .getOrElse(Error("Adding like error!"))
   }
 
   private def requestIsValid(request: CreateTweetRequest): Boolean = {

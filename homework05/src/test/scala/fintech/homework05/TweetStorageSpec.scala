@@ -18,7 +18,7 @@ class TweetStorageSpec extends FlatSpec with Matchers {
       Option(Instant.now()),
       0)
     storage.get(uuid) shouldBe Option.empty
-    storage.save(tweet).get shouldBe tweet
+    storage.save(tweet) shouldBe tweet
     storage.get(uuid).get shouldBe tweet
   }
 }

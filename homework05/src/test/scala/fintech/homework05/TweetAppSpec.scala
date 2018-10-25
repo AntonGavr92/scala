@@ -8,7 +8,7 @@ class TweetAppSpec extends FlatSpec with Matchers {
 
   "Tweet app method create tweet" should "be work correct" in {
     val request = CreateTweetRequest("Test text #test #123#text", "me")
-    val tweet = app.createTweet(request).getValue
+    val tweet = unpack(app.createTweet(request))
     tweet.text shouldBe "Test text #test #123#text"
     tweet.likes shouldBe 0
     tweet.user shouldBe "me"
@@ -20,14 +20,21 @@ class TweetAppSpec extends FlatSpec with Matchers {
 
   "Tweet app method get tweet" should "be work correct" in {
     val request = CreateTweetRequest("Test text #test #123#text", "me")
-    val tweet = app.createTweet(request).getValue
-    app.getTweet(GetTweetRequest(tweet.id)).getValue shouldBe tweet
+    val tweet = unpack(app.createTweet(request))
+    unpack(app.getTweet(GetTweetRequest(tweet.id))) shouldBe tweet
   }
 
   "Tweet app method addLike" should "be work correct" in {
     val request = CreateTweetRequest("Test text #test #123#text", "me")
-    val tweet = app.createTweet(request).getValue
-    app.addLike(LikeRequest(tweet.id)).getValue shouldBe 1
+    val tweet = unpack(app.createTweet(request))
+    unpack(app.addLike(LikeRequest(tweet.id))) shouldBe 1
+  }
+
+  private def unpack[E](result: Result[E]): E = {
+    result match {
+      case Success(res) => res
+      case Error(_) => throw new IllegalArgumentException();
+    }
   }
 
 }
