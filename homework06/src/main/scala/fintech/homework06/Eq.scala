@@ -42,37 +42,33 @@ object Eq {
 
   implicit class EqComplexNumber(leftComplexNumber: ComplexNumber) {
     def ====(rightComplexNumber: ComplexNumber, scale: Int = 2)(implicit eq: Eq[BigDecimal]): Boolean = {
-      eq.equiv(
-        BigDecimal(leftComplexNumber.real).setScale(scale, BigDecimal.RoundingMode.HALF_UP),
-        BigDecimal(rightComplexNumber.real).setScale(scale, BigDecimal.RoundingMode.HALF_UP)
-      ) &&
-        eq.equiv(
-          BigDecimal(leftComplexNumber.imaginary).setScale(scale, BigDecimal.RoundingMode.HALF_UP),
-          BigDecimal(rightComplexNumber.imaginary).setScale(scale, BigDecimal.RoundingMode.HALF_UP)
-        )
+      def transform(double: Double): BigDecimal = BigDecimal(double).setScale(scale, BigDecimal.RoundingMode.HALF_UP)
+
+      eq.equiv(transform(leftComplexNumber.real), transform(rightComplexNumber.real)) &&
+        eq.equiv(transform(leftComplexNumber.imaginary), transform(rightComplexNumber.imaginary))
     }
   }
 
 }
 
-class ComplexNumber (val real: Double, val imaginary: Double){
+class ComplexNumber(val real: Double, val imaginary: Double) {
 
-  def + (another: ComplexNumber): ComplexNumber = {
+  def +(another: ComplexNumber): ComplexNumber = {
     new ComplexNumber(real + another.real, imaginary + another.imaginary)
   }
 
-  def - (another: ComplexNumber): ComplexNumber = {
+  def -(another: ComplexNumber): ComplexNumber = {
     new ComplexNumber(real - another.real, imaginary - another.imaginary)
   }
 
-  def * (another: ComplexNumber): ComplexNumber = {
+  def *(another: ComplexNumber): ComplexNumber = {
     new ComplexNumber(
       real * another.real - imaginary * another.imaginary,
       real * another.real + imaginary * another.imaginary
     )
   }
 
-  def ~ (value: Int): ComplexNumber = {
+  def ~(value: Int): ComplexNumber = {
     val abs = Math.sqrt(real * real + imaginary * imaginary)
     val arg = if (real > 0)
       Math.atan2(imaginary, real)
