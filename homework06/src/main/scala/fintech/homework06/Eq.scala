@@ -9,43 +9,38 @@ trait Eq[A] {
   def equiv(lft: A, rgt: A): Boolean
 }
 
+case class Scale(value: Int)
+
 object Eq {
 
   implicit val intEq: Eq[Int] = (lft: Int, rgt: Int) => lft == rgt
   implicit val strEq: Eq[String] = (lft: String, rgt: String) => lft == rgt
-  implicit val doubleEq: Eq[Double] = (lft: Double, rgt: Double) => lft == rgt
-  implicit val bigDecimalEq: Eq[BigDecimal] = (lft: BigDecimal, rgt: BigDecimal) => lft == rgt
 
-  implicit def iteratorEq[A](implicit eq: Eq[A]): Eq[Iterator[A]] = (lft: Iterator[A], rgt: Iterator[A]) => {
-    lft.forall(item => eq.equiv(item, rgt.next()))
+  implicit def doubleEq(implicit scale: Scale = Scale(2)): Eq[Double] = (lft: Double, rgt: Double) =>
+    BigDecimal(lft).setScale(scale.value, BigDecimal.RoundingMode.HALF_UP) ==
+      BigDecimal(rgt).setScale(scale.value, BigDecimal.RoundingMode.HALF_UP)
+
+  implicit def listEq[A](implicit eq: Eq[A]): Eq[List[A]] = {
+    (lft: List[A], rgt: List[A]) => lft.zip(rgt).forall(pair => eq.equiv(pair._1, pair._2))
   }
 
-  implicit class EqList[A](leftList: List[A]) {
-    def ====(rightList: List[A])(implicit eqItems: Eq[Iterator[A]]): Boolean = {
-      leftList.size == rightList.size && eqItems.equiv(leftList.iterator, rightList.iterator)
-    }
+  implicit def mapEq[A, B](implicit eqA: Eq[A], eqB: Eq[B]): Eq[Map[A, B]] = {
+    (lft: Map[A, B], rgt: Map[A, B]) =>
+      lft.values.zip(rgt.values).forall(pair => eqB.equiv(pair._1, pair._2)) &&
+        lft.keys.zip(rgt.keys).forall(pair => eqA.equiv(pair._1, pair._2))
   }
 
-  implicit class EqSet[A](leftSet: Set[A]) {
-    def ====(rightSet: Set[A])(implicit eqItems: Eq[Iterator[A]]): Boolean = {
-      leftSet.size == rightSet.size && eqItems.equiv(leftSet.iterator, rightSet.iterator)
-    }
+  implicit def setEq[A](implicit eq: Eq[A]): Eq[Set[A]] = {
+    (lft: Set[A], rgt: Set[A]) => lft.zip(rgt).forall(pair => eq.equiv(pair._1, pair._2))
   }
 
-  implicit class EqMap[A, B](leftMap: Map[A, B]) {
-    def ====(rightMap: Map[A, B])(implicit eqKeys: Eq[Iterator[A]], eqValues: Eq[Iterator[B]]): Boolean = {
-      leftMap.size == rightMap.size &&
-        eqKeys.equiv(leftMap.keys.iterator, rightMap.keys.iterator) &&
-        eqValues.equiv(leftMap.values.iterator, rightMap.values.iterator)
-    }
+  implicit def complexEq(implicit eq: Eq[Double]): Eq[ComplexNumber] = {
+    (lft: ComplexNumber, rgt: ComplexNumber) => eq.equiv(lft.imaginary, rgt.imaginary) && eq.equiv(lft.real, rgt.real)
   }
 
-  implicit class EqComplexNumber(leftComplexNumber: ComplexNumber) {
-    def ====(rightComplexNumber: ComplexNumber, scale: Int = 2)(implicit eq: Eq[BigDecimal]): Boolean = {
-      def transform(double: Double): BigDecimal = BigDecimal(double).setScale(scale, BigDecimal.RoundingMode.HALF_UP)
-
-      eq.equiv(transform(leftComplexNumber.real), transform(rightComplexNumber.real)) &&
-        eq.equiv(transform(leftComplexNumber.imaginary), transform(rightComplexNumber.imaginary))
+  implicit class EqImpl[A](leftEq: A) {
+    def ====(rightEq: A)(implicit eq: Eq[A]): Boolean = {
+      eq.equiv(leftEq, rightEq)
     }
   }
 
